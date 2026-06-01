@@ -1,0 +1,133 @@
+import json
+import re
+
+# loads the json file
+def loadFile(fileName):
+    f = open(fileName, "r", encoding="utf=8")
+    data = json.load(f)
+    return data
+
+# positive words/patterns
+positiveWords = {
+    "good", "great", "incredible" , "fun",
+    "peak", "excellent", "fantastic", "awesome",
+    "amazing", "love", "effective", "new",
+    "perfect", "cooking", "aura"
+}
+
+positivePatterns = {
+    r"love\w*",
+    r"amaz\w*",
+    r"extrem\w*",
+    r"cook\w*",
+    r"enjoy\w*"
+}
+
+
+# negative words/patterns
+negativeWords = {
+    "bad", "awful", "terrible" , "die",
+    "poor", "worst", "horrible", "hate",
+    "unplayable", "old", "slow", "cooked"
+}
+
+negativePatterns = {
+    r"bad\w*",
+    r"wors\w*",
+    r"disgust\w*",
+    r"dread\w*"
+}
+
+# these words/punctiation can confuse the program so they are removed
+stopWords = {
+    " the ", " and ", " it ", " is ",
+    " in ", " my ", " of ", " this ",
+    " that ", " for ", " of ", "really"
+}
+
+punctuation = ".,?!:;'*&/()[]"
+
+def classifyReview(text):
+    # removing punctuation
+    for i in range(0, len(punctuation) -1):
+        currentPunctuation = punctuation[i]
+        if currentPunctuation in text:
+            text = text.replace(currentPunctuation, "")
+
+    # removing stop words
+    for stopWord in stopWords:
+        if stopWord in text:
+            text = text.replace(stopWord, " ")
+
+    words = text.lower().split()
+
+    #print(words)
+
+    # initialise scores to 0
+    posScore = 0
+    negScore = 0
+
+    # checking the patterns
+    for pattern in positivePatterns:
+        if re.search(pattern, text):
+            posScore += 1
+
+    for pattern in negativePatterns:
+        if re.search(pattern, text):
+            negScore += 1
+
+    # checking the words
+    for word in words:
+        # checking the word before to account for negations
+        index = words.index(word)
+        prevIndex = index - 1
+        prevWord = words[prevIndex]
+        if word in positiveWords:
+            if prevWord == "not":
+                negScore += 1
+            else:
+                posScore += 1
+        if word in negativeWords:
+            if prevWord == "not":
+                posScore += 1
+            else:
+                negScore += 1
+
+    if posScore > negScore:
+        return "positive"
+    elif negScore > posScore:
+        return "negative"
+    else:
+        return "neutral"
+
+def evaluateReview(data):
+    correct = 0;
+    total = 0;
+
+    for element in data:
+        text = element["review"]
+        trueLabel = element["label"]
+
+        # checking if the program categorised the review correctly
+        predicted = classifyReview(text)
+        if predicted == trueLabel:
+            correct += 1
+
+        else:
+            #prints out an incorrect categorisation with its actual label
+            print(text)
+            print("predicted: ", predicted)
+            print("actual: ", trueLabel)
+            print()
+
+        total += 1
+    accuracy = (correct/total) * 100
+
+    # final information
+    print("Total reviews:", total)
+    print("Correct predictions:", correct)
+    print("Accuracy:", round(accuracy, 1), "%")
+
+data = loadFile("steam_reviews.json")
+evaluateReview(data)
+
