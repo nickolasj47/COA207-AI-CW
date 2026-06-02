@@ -113,15 +113,6 @@ def evaluateReview(data):
         if predicted == trueLabel:
             correct += 1
 
-        else:
-            # prints out an incorrect categorisation with its actual label
-            '''
-            print(text)
-            print("predicted: ", predicted)
-            print("actual: ", trueLabel)
-            print()
-            '''
-
         total += 1
     accuracy = (correct/total) * 100
 
